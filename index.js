@@ -9,6 +9,7 @@ app.use(cors({
     'http://localhost:3000',  // React dev server alternativo
     'http://127.0.0.1:5173',  // Alternativa localhost
     'http://localhost:4173',  // Vite preview
+    'http://161.35.135.143:3000',  // Servidor remoto
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
