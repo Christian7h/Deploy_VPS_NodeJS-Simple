@@ -1,5 +1,19 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
+
+// Configurar CORS antes que otros middlewares
+app.use(cors({
+  origin: [
+    'http://localhost:5173',  // Vite dev server
+    'http://localhost:3000',  // React dev server alternativo
+    'http://127.0.0.1:5173',  // Alternativa localhost
+    'http://localhost:4173',  // Vite preview
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Middleware para JSON
 app.use(express.json());
