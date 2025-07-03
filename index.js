@@ -2,19 +2,29 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// Configurar CORS antes que otros middlewares
+// Configurar CORS antes que otros middlewares - PERMITIR CUALQUIER ORIGEN
 app.use(cors({
-  origin: [
-    'http://localhost:5173',  // Vite dev server
-    'http://localhost:3000',  // React dev server alternativo
-    'http://127.0.0.1:5173',  // Alternativa localhost
-    'http://localhost:4173',  // Vite preview
-    'http://161.35.135.143:3000',  // Servidor remoto
-  ],
+  origin: true, // Permitir CUALQUIER origen
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  optionsSuccessStatus: 200
 }));
+
+// Headers CORS adicionales para máxima compatibilidad
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Max-Age', '86400'); // 24 horas
+  
+  // Responder a preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Middleware para JSON
 app.use(express.json());
