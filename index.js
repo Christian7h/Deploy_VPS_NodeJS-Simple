@@ -4,6 +4,53 @@ const app = express();
 // Middleware para JSON
 app.use(express.json());
 
+// Sistema de caché simple en memoria
+const cache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en millisegundos
+
+// Middleware para medir tiempo de respuesta
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+  });
+  
+  next();
+});
+
+// Middleware de caché
+const cacheMiddleware = (req, res, next) => {
+  const key = req.originalUrl;
+  const cachedResponse = cache.get(key);
+  
+  if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_DURATION) {
+    console.log(`Cache HIT para ${key}`);
+    res.setHeader('X-Cache', 'HIT');
+    res.setHeader('X-Response-Time', '0ms');
+    return res.json(cachedResponse.data);
+  }
+  
+  console.log(`Cache MISS para ${key}`);
+  res.setHeader('X-Cache', 'MISS');
+  
+  // Interceptar la respuesta para cachearla
+  const originalJson = res.json;
+  res.json = function(data) {
+    // Guardar en caché
+    cache.set(key, {
+      data: data,
+      timestamp: Date.now()
+    });
+    
+    // Enviar respuesta original
+    originalJson.call(this, data);
+  };
+  
+  next();
+};
+
 // Datos de las marcas
 const brands = [
   {
@@ -180,18 +227,76 @@ app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
-// Ruta para obtener todas las marcas
-app.get('/brands', (req, res) => {
-  res.json(brands);
+// Ruta para obtener todas las marcas (con caché)
+app.get('/brands', cacheMiddleware, (req, res) => {
+  const start = Date.now();
+  
+  // Simular algo de procesamiento
+  setTimeout(() => {
+    const responseTime = Date.now() - start;
+    res.setHeader('X-Response-Time', `${responseTime}ms`);
+    res.json({
+      success: true,
+      count: brands.length,
+      responseTime: `${responseTime}ms`,
+      cached: res.getHeader('X-Cache') === 'HIT',
+      data: brands
+    });
+  }, 100); // Simular 100ms de procesamiento
 });
 
-// Ruta para obtener una marca específica por ID
-app.get('/brands/:id', (req, res) => {
+// Ruta para obtener una marca específica por ID (con caché)
+app.get('/brands/:id', cacheMiddleware, (req, res) => {
+  const start = Date.now();
+  
   const brand = brands.find(b => b.id === req.params.id);
   if (!brand) {
-    return res.status(404).json({ error: 'Marca no encontrada' });
+    return res.status(404).json({ 
+      success: false,
+      error: 'Marca no encontrada',
+      responseTime: `${Date.now() - start}ms`
+    });
   }
-  res.json(brand);
+  
+  // Simular algo de procesamiento
+  setTimeout(() => {
+    const responseTime = Date.now() - start;
+    res.setHeader('X-Response-Time', `${responseTime}ms`);
+    res.json({
+      success: true,
+      responseTime: `${responseTime}ms`,
+      cached: res.getHeader('X-Cache') === 'HIT',
+      data: brand
+    });
+  }, 50); // Simular 50ms de procesamiento
+});
+
+// Ruta para limpiar caché (útil para desarrollo)
+app.delete('/cache', (req, res) => {
+  cache.clear();
+  res.json({ 
+    success: true, 
+    message: 'Caché limpiado',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Ruta para ver estadísticas del caché
+app.get('/cache/stats', (req, res) => {
+  const stats = {
+    totalEntries: cache.size,
+    entries: Array.from(cache.keys()).map(key => ({
+      url: key,
+      cachedAt: new Date(cache.get(key).timestamp).toISOString(),
+      ageMs: Date.now() - cache.get(key).timestamp
+    }))
+  };
+  
+  res.json({
+    success: true,
+    cache: stats,
+    cacheDurationMs: CACHE_DURATION
+  });
 });
 
 app.listen(3000, '0.0.0.0', () => {
