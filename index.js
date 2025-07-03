@@ -1,30 +1,5 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
-
-// Configurar CORS antes que otros middlewares - PERMITIR CUALQUIER ORIGEN
-app.use(cors({
-  origin: true, // Permitir CUALQUIER origen
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
-  optionsSuccessStatus: 200
-}));
-
-// Headers CORS adicionales para máxima compatibilidad
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', '*');
-  res.header('Access-Control-Max-Age', '86400'); // 24 horas
-  
-  // Responder a preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
 
 // Middleware para JSON
 app.use(express.json());
