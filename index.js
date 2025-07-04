@@ -1,19 +1,19 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const apicache = require('apicache');
+
+// Configurar apicache
+const cacheMiddleware = apicache.middleware;
 
 app.use(cors({
-  origin: 'https://frontvpsapi.pages.dev', // o '*' para todos los orígenes (no recomendado en producción)
+  origin: '*', // Permitir cualquier origen durante desarrollo
   methods: ['GET', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Middleware para JSON
 app.use(express.json());
-
-// Sistema de caché simple en memoria
-const cache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en millisegundos
 
 // Middleware para medir tiempo de respuesta
 app.use((req, res, next) => {
@@ -21,42 +21,12 @@ app.use((req, res, next) => {
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+    const cached = res.getHeader('apicache-store') ? 'HIT' : 'MISS';
+    console.log(`🚀 ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms - Cache: ${cached}`);
   });
   
   next();
 });
-
-// Middleware de caché
-const cacheMiddleware = (req, res, next) => {
-  const key = req.originalUrl;
-  const cachedResponse = cache.get(key);
-  
-  if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_DURATION) {
-    console.log(`Cache HIT para ${key}`);
-    res.setHeader('X-Cache', 'HIT');
-    res.setHeader('X-Response-Time', '0ms');
-    return res.json(cachedResponse.data);
-  }
-  
-  console.log(`Cache MISS para ${key}`);
-  res.setHeader('X-Cache', 'MISS');
-  
-  // Interceptar la respuesta para cachearla
-  const originalJson = res.json;
-  res.json = function(data) {
-    // Guardar en caché
-    cache.set(key, {
-      data: data,
-      timestamp: Date.now()
-    });
-    
-    // Enviar respuesta original
-    originalJson.call(this, data);
-  };
-  
-  next();
-};
 
 // Datos de las marcas
 const brands = [
@@ -234,26 +204,26 @@ app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
-// Ruta para obtener todas las marcas (con caché)
-app.get('/brands', cacheMiddleware, (req, res) => {
+// Ruta para obtener todas las marcas (con caché de 5 minutos)
+app.get('/brands', cacheMiddleware('5 minutes'), (req, res) => {
   const start = Date.now();
   
   // Simular algo de procesamiento
   setTimeout(() => {
     const responseTime = Date.now() - start;
-    res.setHeader('X-Response-Time', `${responseTime}ms`);
     res.json({
       success: true,
       count: brands.length,
       responseTime: `${responseTime}ms`,
-      cached: res.getHeader('X-Cache') === 'HIT',
+      cached: res.getHeader('apicache-store') ? true : false,
+      timestamp: new Date().toISOString(),
       data: brands
     });
   }, 100); // Simular 100ms de procesamiento
 });
 
-// Ruta para obtener una marca específica por ID (con caché)
-app.get('/brands/:id', cacheMiddleware, (req, res) => {
+// Ruta para obtener una marca específica por ID (con caché de 3 minutos)
+app.get('/brands/:id', cacheMiddleware('3 minutes'), (req, res) => {
   const start = Date.now();
   
   const brand = brands.find(b => b.id === req.params.id);
@@ -261,48 +231,55 @@ app.get('/brands/:id', cacheMiddleware, (req, res) => {
     return res.status(404).json({ 
       success: false,
       error: 'Marca no encontrada',
-      responseTime: `${Date.now() - start}ms`
+      responseTime: `${Date.now() - start}ms`,
+      timestamp: new Date().toISOString()
     });
   }
   
   // Simular algo de procesamiento
   setTimeout(() => {
     const responseTime = Date.now() - start;
-    res.setHeader('X-Response-Time', `${responseTime}ms`);
     res.json({
       success: true,
       responseTime: `${responseTime}ms`,
-      cached: res.getHeader('X-Cache') === 'HIT',
+      cached: res.getHeader('apicache-store') ? true : false,
+      timestamp: new Date().toISOString(),
       data: brand
     });
   }, 50); // Simular 50ms de procesamiento
 });
 
-// Ruta para limpiar caché (útil para desarrollo)
+// Ruta para limpiar TODO el caché
 app.delete('/cache', (req, res) => {
-  cache.clear();
+  apicache.clear();
   res.json({ 
     success: true, 
-    message: 'Caché limpiado',
+    message: 'Todo el caché ha sido limpiado',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Ruta para limpiar caché específico
+app.delete('/cache/:key', (req, res) => {
+  const key = req.params.key;
+  apicache.clear(key);
+  res.json({ 
+    success: true, 
+    message: `Caché para "${key}" ha sido limpiado`,
     timestamp: new Date().toISOString()
   });
 });
 
 // Ruta para ver estadísticas del caché
 app.get('/cache/stats', (req, res) => {
-  const stats = {
-    totalEntries: cache.size,
-    entries: Array.from(cache.keys()).map(key => ({
-      url: key,
-      cachedAt: new Date(cache.get(key).timestamp).toISOString(),
-      ageMs: Date.now() - cache.get(key).timestamp
-    }))
-  };
+  const performance = apicache.getPerformance();
+  const index = apicache.getIndex();
   
   res.json({
     success: true,
-    cache: stats,
-    cacheDurationMs: CACHE_DURATION
+    performance: performance,
+    index: index,
+    timestamp: new Date().toISOString()
   });
 });
 
