@@ -7,7 +7,7 @@ const apicache = require('apicache');
 const cacheMiddleware = apicache.middleware;
 
 app.use(cors({
-  origin: 'https://frontvpsapi.pages.de', // Permitir cualquier origen durante desarrollo
+  origin: 'https://frontvpsapi.pages.dev', // Permitir cualquier origen durante desarrollo
   methods: ['GET', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
