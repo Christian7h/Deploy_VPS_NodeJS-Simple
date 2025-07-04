@@ -4,7 +4,7 @@ const cors = require('cors');
 
 // Middleware para JSON
 app.use(express.json());
-const allowedOrigin = 'https://www.crisdeus.site';
+const allowedOrigin = 'http://localhost:5173';
 
 // Sistema de caché simple en memoria
 const cache = new Map();
