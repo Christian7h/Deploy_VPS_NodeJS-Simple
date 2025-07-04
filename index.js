@@ -5,11 +5,10 @@ const apicache = require('apicache');
 
 // Configurar apicache
 const cacheMiddleware = apicache.middleware;
-
 app.use(cors({
-  origin: 'https://frontvpsapi.pages.dev', // Permitir cualquier origen durante desarrollo
+  origin: 'https://frontvpsapi.pages.dev', // o '*' para todos los orígenes (no recomendado en producción)
   methods: ['GET', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type']
 }));
 
 // Middleware para JSON
