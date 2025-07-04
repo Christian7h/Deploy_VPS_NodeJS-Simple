@@ -1,13 +1,29 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 
 // Middleware para JSON
 app.use(express.json());
+const allowedOrigin = 'https://www.crisdeus.site';
 
 // Sistema de caché simple en memoria
 const cache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en millisegundos
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin === allowedOrigin && req.path.startsWith('/brands')) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+  }
+
+  next();
+});
 // Middleware para medir tiempo de respuesta
 app.use((req, res, next) => {
   const start = Date.now();
