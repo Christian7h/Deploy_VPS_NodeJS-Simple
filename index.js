@@ -1,5 +1,12 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://frontvpsapi.pages.dev', // o '*' para todos los orígenes (no recomendado en producción)
+  methods: ['GET', 'POST', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
 
 // Middleware para JSON
 app.use(express.json());
