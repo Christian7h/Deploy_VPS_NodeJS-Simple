@@ -6,7 +6,7 @@ const apicache = require('apicache');
 // Configurar apicache
 const cacheMiddleware = apicache.middleware;
 app.use(cors({
-  origin: 'https://frontvpsapi.pages.dev', // o '*' para todos los orígenes (no recomendado en producción)
+  origin: '*', // ⚠️ Solo para testing, no usar en producción
   methods: ['GET', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type']
 }));
@@ -3275,7 +3275,22 @@ app.get('/brands', cacheMiddleware('5 minutes'), (req, res) => {
     });
   }, 100); // Simular 100ms de procesamiento
 });
-
+// Ruta para obtener todos los vehículos (con caché de 3 minutos)
+app.get('/vehicles', cacheMiddleware('3 minutes'), (req, res) => {
+  const start = Date.now();
+  
+  setTimeout(() => {
+    const responseTime = Date.now() - start;
+    res.json({
+      success: true,
+      count: vehicles.length,
+      responseTime: `${responseTime}ms`,
+      cached: res.getHeader('apicache-store') ? true : false,
+      timestamp: new Date().toISOString(),
+      data: vehicles
+    });
+  }, 50);
+});
 // Ruta para obtener una marca específica por ID (con caché de 3 minutos)
 app.get('/brands/:id', cacheMiddleware('3 minutes'), (req, res) => {
   const start = Date.now();
@@ -3339,22 +3354,7 @@ app.get('/cache/stats', (req, res) => {
 
 // === RUTAS DE VEHÍCULOS ===
 
-// Ruta para obtener todos los vehículos (con caché de 3 minutos)
-app.get('/vehicles', cacheMiddleware('3 minutes'), (req, res) => {
-  const start = Date.now();
-  
-  setTimeout(() => {
-    const responseTime = Date.now() - start;
-    res.json({
-      success: true,
-      count: vehicles.length,
-      responseTime: `${responseTime}ms`,
-      cached: res.getHeader('apicache-store') ? true : false,
-      timestamp: new Date().toISOString(),
-      data: vehicles
-    });
-  }, 50);
-});
+
 
 // Ruta para obtener un vehículo específico por ID (con caché de 5 minutos)
 app.get('/vehicles/:id', cacheMiddleware('5 minutes'), (req, res) => {
