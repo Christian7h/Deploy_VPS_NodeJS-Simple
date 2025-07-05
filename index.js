@@ -1,20 +1,27 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
 const apicache = require('apicache');
 
-// Configurar apicache
-const cacheMiddleware = apicache.middleware;
+const app = express();
+
+// ================================
+// CONFIGURACIÓN DE MIDDLEWARES
+// ================================
+
+// Configurar CORS
 app.use(cors({
-  origin: '*', // ⚠️ Solo para testing, no usar en producción
-  methods: ['GET', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  origin: '*', // ⚠️ Solo para desarrollo - cambiar en producción
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Middleware para JSON
 app.use(express.json());
 
-// Middleware para medir tiempo de respuesta
+// Configurar apicache
+const cache = apicache.middleware;
+
+// Middleware para medir tiempo de respuesta y logging
 app.use((req, res, next) => {
   const start = Date.now();
   
@@ -27,36 +34,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Datos de las marcas
+// ================================
+// DATOS - MARCAS DE AUTOMÓVILES
+// ================================
+
 const brands = [
   {
     id: 'bmw',
     name: 'BMW',
-    description: 'The Ultimate Driving Machine',
-    foundation: 1916,
-    history: "Bayerische Motoren Werke AG, founded in Munich as an aircraft engine manufacturer. Transitioned to motorcycles (1923) and automobiles (1928).",
-    trajectory: "Pioneer in electric mobility with the i-Series. Multiple victories in touring car championships.",
-    translations: {
-      es: {
-        name: 'BMW',
-        description: 'La máquina de conducir definitiva',
-        foundation: '1916',
-        history: "Bayerische Motoren Werke AG, fundada en Múnich como fabricante de motores para aviones. Transición a motocicletas (1923) y automóviles (1928).",
-        trajectory: "Pionera en movilidad eléctrica con la serie i. Múltiples victorias en campeonatos de turismos."
-      },
-      en: {
-        name: 'BMW',
-        description: 'The Ultimate Driving Machine',
-        foundation: '1916',
-        history: "Bayerische Motoren Werke AG, founded in Munich as an aircraft engine manufacturer. Transitioned to motorcycles (1923) and automobiles (1928).",
-        trajectory: "Pioneer in electric mobility with the i-Series. Multiple victories in touring car championships."
-      }
-    }
-  },
-  // Resto de marcas (Mercedes, Audi, Porsche, Ferrari, etc.)
-  {
-    id: 'bmw',
-    name: 'BMW',
+    logo: '/bmw/bmw.png',
     description: 'The Ultimate Driving Machine',
     foundation: 1916,
     history: "Bayerische Motoren Werke AG, founded in Munich as an aircraft engine manufacturer. Transitioned to motorcycles (1923) and automobiles (1928).",
@@ -81,6 +67,7 @@ const brands = [
   {
     id: 'mercedes',
     name: 'Mercedes-Benz',
+    logo: '/mb/mb.png',
     description: 'The Best or Nothing',
     foundation: 1926,
     history: "Formed by merger of Benz & Cie and Daimler-Motoren-Gesellschaft. Name origin from Mercedes Jellinek, daughter of an important business partner.",
@@ -105,6 +92,7 @@ const brands = [
   {
     id: 'audi',
     name: 'Audi',
+    logo: '/audi/audi.png',
     description: 'Progress through Technology',
     foundation: 1909,
     history: "Founded by August Horch. Name 'Audi' comes from Latin translation of Horch ('listen'). Merged with Horch, DKW and Wanderer to form Auto Union (1932).",
@@ -129,6 +117,7 @@ const brands = [
   {
     id: 'porsche',
     name: 'Porsche',
+    logo: '/por/por.png',
     description: 'There is no substitute',
     foundation: 1931,
     history: "Founded by Ferdinand Porsche, designer of the original Volkswagen Beetle. First model: Porsche 64 (1938).",
@@ -153,6 +142,7 @@ const brands = [
   {
     id: 'ferrari',
     name: 'Ferrari',
+    logo: '/fer/fer.png',
     description: 'Ferrari. Racing. Since 1947.',
     foundation: 1947,
     history: "Founded by Enzo Ferrari after leaving Alfa Romeo. First road car: 125 S (1947). Iconic prancing horse logo from WWI flying ace Francesco Baracca.",
@@ -177,6 +167,7 @@ const brands = [
   {
     id: 'lamborghini',
     name: 'Lamborghini',
+    logo: '/lambo/lambo.png',
     description: 'Power, beauty and soul',
     foundation: 1963,
     history: "Founded by Ferruccio Lamborghini as response to Enzo Ferrari. First car: 350 GT (1964). Miura (1966) defined the supercar category.",
@@ -201,6 +192,7 @@ const brands = [
   {
     id: 'bugatti',
     name: 'Bugatti',
+    logo: '/buga/buga.png',
     description: 'Art, Forme, Technique',
     foundation: 1909,
     history: "Founded by Ettore Bugatti in Molsheim. Known for artistic designs and racing success. Revived in 1987 with EB110, later by Volkswagen Group.",
@@ -221,7 +213,7 @@ const brands = [
         trajectory: "Creator of fastest production cars: Veyron Super Sport (431 km/h) and Chiron Super Sport 300+ (490 km/h)."
       }
     }
-  },
+  },  
   {
     id: 'koenigsegg',
     name: 'Koenigsegg',
@@ -775,7 +767,10 @@ const brands = [
   }
 ];
 
-// Datos de vehículos
+// ================================
+// DATOS - VEHÍCULOS
+// ================================
+
 const vehicles = [
   {
     id: 'm4-csl',
@@ -3254,15 +3249,35 @@ const vehicles = [
   }
 ];
 
+// ================================
+// RUTAS - PRINCIPAL
+// ================================
+
 app.get('/', (req, res) => {
-  res.send('Hello, World!');
+  res.json({
+    success: true,
+    message: 'API de Marcas y Vehículos - Funcionando correctamente ✅',
+    version: '1.0.0',
+    endpoints: {
+      brands: '/brands',
+      vehicles: '/vehicles',
+      brandVehicles: '/brands/:brandId/vehicles',
+      vehiclesWithBrands: '/vehicles-with-brands',
+      cache: '/cache',
+      cacheStats: '/cache/stats'
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Ruta para obtener todas las marcas (con caché de 5 minutos)
-app.get('/brands', cacheMiddleware('5 minutes'), (req, res) => {
+// ================================
+// RUTAS - MARCAS (BRANDS)
+// ================================
+
+// Obtener todas las marcas
+app.get('/brands', cache('5 minutes'), (req, res) => {
   const start = Date.now();
   
-  // Simular algo de procesamiento
   setTimeout(() => {
     const responseTime = Date.now() - start;
     res.json({
@@ -3273,10 +3288,41 @@ app.get('/brands', cacheMiddleware('5 minutes'), (req, res) => {
       timestamp: new Date().toISOString(),
       data: brands
     });
-  }, 100); // Simular 100ms de procesamiento
+  }, 100);
 });
-// Ruta para obtener todos los vehículos (con caché de 3 minutos)
-app.get('/vehicles', cacheMiddleware('3 minutes'), (req, res) => {
+
+// Obtener una marca específica por ID
+app.get('/brands/:id', cache('3 minutes'), (req, res) => {
+  const start = Date.now();
+  
+  const brand = brands.find(b => b.id === req.params.id);
+  if (!brand) {
+    return res.status(404).json({ 
+      success: false,
+      error: 'Marca no encontrada',
+      responseTime: `${Date.now() - start}ms`,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  setTimeout(() => {
+    const responseTime = Date.now() - start;
+    res.json({
+      success: true,
+      responseTime: `${responseTime}ms`,
+      cached: res.getHeader('apicache-store') ? true : false,
+      timestamp: new Date().toISOString(),
+      data: brand
+    });
+  }, 50);
+});
+
+// ================================
+// RUTAS - VEHÍCULOS (VEHICLES)
+// ================================
+
+// Obtener todos los vehículos
+app.get('/vehicles', cache('3 minutes'), (req, res) => {
   const start = Date.now();
   
   setTimeout(() => {
@@ -3291,73 +3337,9 @@ app.get('/vehicles', cacheMiddleware('3 minutes'), (req, res) => {
     });
   }, 50);
 });
-// Ruta para obtener una marca específica por ID (con caché de 3 minutos)
-app.get('/brands/:id', cacheMiddleware('3 minutes'), (req, res) => {
-  const start = Date.now();
-  
-  const brand = brands.find(b => b.id === req.params.id);
-  if (!brand) {
-    return res.status(404).json({ 
-      success: false,
-      error: 'Marca no encontrada',
-      responseTime: `${Date.now() - start}ms`,
-      timestamp: new Date().toISOString()
-    });
-  }
-  
-  // Simular algo de procesamiento
-  setTimeout(() => {
-    const responseTime = Date.now() - start;
-    res.json({
-      success: true,
-      responseTime: `${responseTime}ms`,
-      cached: res.getHeader('apicache-store') ? true : false,
-      timestamp: new Date().toISOString(),
-      data: brand
-    });
-  }, 50); // Simular 50ms de procesamiento
-});
 
-// Ruta para limpiar TODO el caché
-app.delete('/cache', (req, res) => {
-  apicache.clear();
-  res.json({ 
-    success: true, 
-    message: 'Todo el caché ha sido limpiado',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Ruta para limpiar caché específico
-app.delete('/cache/:key', (req, res) => {
-  const key = req.params.key;
-  apicache.clear(key);
-  res.json({ 
-    success: true, 
-    message: `Caché para "${key}" ha sido limpiado`,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Ruta para ver estadísticas del caché
-app.get('/cache/stats', (req, res) => {
-  const performance = apicache.getPerformance();
-  const index = apicache.getIndex();
-  
-  res.json({
-    success: true,
-    performance: performance,
-    index: index,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// === RUTAS DE VEHÍCULOS ===
-
-
-
-// Ruta para obtener un vehículo específico por ID (con caché de 5 minutos)
-app.get('/vehicles/:id', cacheMiddleware('5 minutes'), (req, res) => {
+// Obtener un vehículo específico por ID
+app.get('/vehicles/:id', cache('5 minutes'), (req, res) => {
   const start = Date.now();
   
   const vehicle = vehicles.find(v => v.id === req.params.id);
@@ -3382,8 +3364,8 @@ app.get('/vehicles/:id', cacheMiddleware('5 minutes'), (req, res) => {
   }, 30);
 });
 
-// Ruta para obtener vehículos por marca (con caché de 4 minutos)
-app.get('/brands/:brandId/vehicles', cacheMiddleware('4 minutes'), (req, res) => {
+// Obtener vehículos por marca
+app.get('/brands/:brandId/vehicles', cache('4 minutes'), (req, res) => {
   const start = Date.now();
   const brandId = req.params.brandId;
   
@@ -3414,8 +3396,8 @@ app.get('/brands/:brandId/vehicles', cacheMiddleware('4 minutes'), (req, res) =>
   }, 40);
 });
 
-// Ruta para obtener vehículos con sus datos de marca (JOIN simulado)
-app.get('/vehicles-with-brands', cacheMiddleware('5 minutes'), (req, res) => {
+// Obtener vehículos con información de marca (JOIN)
+app.get('/vehicles-with-brands', cache('5 minutes'), (req, res) => {
   const start = Date.now();
   
   setTimeout(() => {
@@ -3444,6 +3426,71 @@ app.get('/vehicles-with-brands', cacheMiddleware('5 minutes'), (req, res) => {
   }, 60);
 });
 
-app.listen(3000, '0.0.0.0', () => {
-  console.log('Servidor escuchando en el puerto 3000 SALUDOS');
+// ================================
+// RUTAS - ADMINISTRACIÓN DE CACHÉ
+// ================================
+
+// Limpiar todo el caché
+app.delete('/cache', (req, res) => {
+  apicache.clear();
+  res.json({ 
+    success: true, 
+    message: 'Todo el caché ha sido limpiado',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Limpiar caché específico
+app.delete('/cache/:key', (req, res) => {
+  const key = req.params.key;
+  apicache.clear(key);
+  res.json({ 
+    success: true, 
+    message: `Caché para "${key}" ha sido limpiado`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Ver estadísticas del caché
+app.get('/cache/stats', (req, res) => {
+  const performance = apicache.getPerformance();
+  const index = apicache.getIndex();
+  
+  res.json({
+    success: true,
+    performance: performance,
+    index: index,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ================================
+// SERVIDOR
+// ================================
+
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log('\n🚗 ================================');
+  console.log('🚀 API DE MARCAS Y VEHÍCULOS');
+  console.log('🚗 ================================');
+  console.log(`📡 Servidor ejecutándose en: http://${HOST}:${PORT}`);
+  console.log(`🌐 CORS habilitado para todos los orígenes`);
+  console.log(`⚡ Caché configurado con apicache`);
+  console.log(`📊 Marcas disponibles: ${brands.length}`);
+  console.log(`🚙 Vehículos disponibles: ${vehicles.length}`);
+  console.log('\n📋 Endpoints disponibles:');
+  console.log('   GET  /                        - Información de la API');
+  console.log('   GET  /brands                  - Todas las marcas');
+  console.log('   GET  /brands/:id              - Marca específica');
+  console.log('   GET  /vehicles                - Todos los vehículos');
+  console.log('   GET  /vehicles/:id            - Vehículo específico');
+  console.log('   GET  /brands/:id/vehicles     - Vehículos por marca');
+  console.log('   GET  /vehicles-with-brands    - Vehículos con datos de marca');
+  console.log('   GET  /cache/stats             - Estadísticas del caché');
+  console.log('   DEL  /cache                   - Limpiar todo el caché');
+  console.log('   DEL  /cache/:key              - Limpiar caché específico');
+  console.log('\n✅ ¡Servidor listo para recibir peticiones!');
+  console.log('🚗 ================================\n');
 });
